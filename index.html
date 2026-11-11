@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gideon Gyimah</title>
+<meta name="description" content="AI engineer in Accra, Ghana. Evaluation validity for generative models used on African languages. First published evaluation of an African language on an open text-to-music model.">
+<meta name="author" content="Gideon Gyimah">
+<meta property="og:title" content="Gideon Gyimah">
+<meta property="og:description" content="I work on whether our evaluation metrics measure what they claim to.">
+<meta property="og:type" content="profile">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f7f3ee'/%3E%3Cpath d='M6 22 L12 10 L18 18 L26 8' stroke='%23a04a28' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap">
+<style>
+:root{
+  --paper:        oklch(97.5% 0.008 70);
+  --paper-sunk:   oklch(94.5% 0.011 70);
+  --paper-edge:   oklch(89% 0.014 68);
+  --ink:          oklch(24% 0.018 55);
+  --ink-soft:     oklch(48% 0.015 60);
+  --ink-faint:    oklch(62% 0.012 60);
+  --rust:         oklch(48% 0.145 38);
+  --rust-pale:    oklch(89% 0.045 38);
+  --verified:     oklch(44% 0.085 155);
+  --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:      oklch(16.5% 0.012 60);
+    --paper-sunk: oklch(21% 0.014 60);
+    --paper-edge: oklch(30% 0.016 60);
+    --ink:        oklch(91% 0.012 70);
+    --ink-soft:   oklch(71% 0.014 65);
+    --ink-faint:  oklch(57% 0.012 62);
+    --rust:       oklch(71% 0.115 42);
+    --rust-pale:  oklch(32% 0.055 38);
+    --verified:   oklch(73% 0.09 155);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:      oklch(16.5% 0.012 60);
+  --paper-sunk: oklch(21% 0.014 60);
+  --paper-edge: oklch(30% 0.016 60);
+  --ink:        oklch(91% 0.012 70);
+  --ink-soft:   oklch(71% 0.014 65);
+  --ink-faint:  oklch(57% 0.012 62);
+  --rust:       oklch(71% 0.115 42);
+  --rust-pale:  oklch(32% 0.055 38);
+  --verified:   oklch(73% 0.09 155);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{max-width:760px; margin:0 auto; padding:0 16px; min-width:0}
+
+.masthead{padding:72px 0 0}
+.name{
+  font-family:var(--display); font-weight:700;
+  font-size:clamp(2.6rem, 8vw, 4.1rem); line-height:0.98;
+  letter-spacing:-0.025em; margin:0 0 20px;
+  font-variation-settings:"opsz" 110;
+}
+.thesis{
+  font-family:var(--display); font-weight:400;
+  font-size:clamp(1.22rem, 3.4vw, 1.68rem); line-height:1.34;
+  letter-spacing:-0.012em; margin:0; max-width:30ch;
+  font-variation-settings:"opsz" 36;
+}
+.thesis em{font-style:italic; color:var(--rust)}
+.placed{
+  font-family:var(--mono); font-size:0.76rem; letter-spacing:0.04em;
+  text-transform:uppercase; color:var(--ink-faint); margin:24px 0 0;
+}
+.run{
+  overflow-wrap:break-word;
+  font-family:var(--mono); font-size:0.8rem; line-height:2.1;
+  margin:14px 0 0; padding:16px 0 0; border-top:1px solid var(--paper-edge);
+}
+.run .sep{color:var(--ink-faint); margin:0 7px}
+a{color:var(--rust); text-decoration:none; border-bottom:1px solid transparent; transition:border-color 160ms var(--ease)}
+a:hover{border-bottom-color:currentColor}
+a:focus-visible{outline:2px solid var(--rust); outline-offset:3px; border-radius:2px}
+
+section{padding:54px 0 0}
+.rule{
+  display:flex; align-items:baseline; gap:14px;
+  margin:0 0 28px; padding-bottom:9px;
+  border-bottom:1.5px solid var(--ink);
+}
+.rule h2{
+  font-family:var(--mono); font-size:0.73rem; font-weight:700;
+  letter-spacing:0.17em; text-transform:uppercase; margin:0; color:var(--ink);
+  white-space:nowrap;
+}
+.rule .count{
+  font-family:var(--mono); font-size:0.7rem; color:var(--ink-faint);
+  margin-left:auto; letter-spacing:0.05em;
+}
+p{margin:0 0 15px; max-width:68ch}
+
+.plate{
+  background:var(--paper-sunk); border:1px solid var(--paper-edge);
+  padding:30px 28px 26px; min-width:0;
+}
+.stamp{
+  display:inline-block; font-family:var(--mono); font-size:0.64rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--verified);
+  border:1px solid currentColor; padding:2px 7px; margin-bottom:16px;
+}
+.plate h3{
+  font-family:var(--display); font-weight:600;
+  font-size:clamp(1.3rem, 4vw, 1.74rem); line-height:1.2;
+  letter-spacing:-0.018em; margin:0 0 10px; max-width:28ch;
+  font-variation-settings:"opsz" 48;
+}
+.venue{
+  font-family:var(--mono); font-size:0.76rem; color:var(--ink-soft);
+  margin:0 0 22px; line-height:1.7;
+}
+.plate p{font-size:0.96rem; max-width:62ch}
+
+figure{margin:26px 0 22px; padding:20px 0 0; border-top:1px solid var(--paper-edge)}
+figcaption{
+  font-family:var(--mono); font-size:0.67rem; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--ink-faint); margin:0 0 20px;
+}
+.dumb{width:100%; height:auto; display:block; overflow:visible}
+.dumb .track{stroke:var(--paper-edge); stroke-width:1.5}
+.dumb .span{stroke:var(--rust); stroke-width:2; stroke-dasharray:3 3; opacity:0.5}
+.dumb .lo{fill:var(--rust)}
+.dumb .hi{fill:var(--paper-sunk); stroke:var(--rust); stroke-width:2}
+.dumb .lbl{font-family:var(--mono); font-size:9.5px; fill:var(--ink-soft)}
+.dumb .val{font-family:var(--mono); font-size:10.5px; font-weight:700; fill:var(--ink)}
+.dumb .ax{font-family:var(--mono); font-size:8.5px; fill:var(--ink-faint)}
+.figskip{font-family:var(--mono); font-size:0.68rem; color:var(--ink-faint); margin:16px 0 0; line-height:1.75; max-width:60ch}
+
+.stats{
+  display:grid; grid-template-columns:repeat(3, 1fr);
+  gap:1px; background:var(--paper-edge); border:1px solid var(--paper-edge);
+  margin:24px 0 0;
+}
+.stat{background:var(--paper-sunk); padding:13px 14px; min-width:0}
+.stat b{
+  display:block; font-family:var(--mono); font-size:1.02rem; font-weight:700;
+  letter-spacing:-0.01em; color:var(--ink);
+}
+.stat span{
+  display:block; font-family:var(--mono); font-size:0.64rem; letter-spacing:0.07em;
+  text-transform:uppercase; color:var(--ink-faint); margin-top:4px; line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.links{font-family:var(--mono); font-size:0.8rem; margin:24px 0 0}
+.links a{margin-right:18px; display:inline-block}
+.links a::before{content:"\2192\00a0"; color:var(--ink-faint)}
+
+.idx{border-top:1px solid var(--paper-edge)}
+.row{
+  display:grid; grid-template-columns:1fr auto;
+  gap:4px 22px; padding:22px 0; border-bottom:1px solid var(--paper-edge);
+}
+.row .lead{
+  font-family:var(--display); font-weight:600; font-size:1.1rem;
+  letter-spacing:-0.012em; line-height:1.26; margin:0 0 8px;
+  font-variation-settings:"opsz" 30;
+}
+.row .where{
+  font-family:var(--mono); font-size:0.72rem; letter-spacing:0.03em;
+  color:var(--ink-faint); text-align:right; white-space:nowrap;
+  grid-column:2; grid-row:1; padding-top:4px; line-height:1.7;
+}
+.row .body{grid-column:1 / -1; min-width:0}
+.row .body p{font-size:0.95rem; margin:0 0 9px; max-width:64ch}
+.row .body p:last-child{margin-bottom:0}
+.row .links{margin-top:12px; font-size:0.76rem}
+@media (max-width:600px){
+  .row{grid-template-columns:1fr}
+  .row .where{text-align:left; grid-column:1; grid-row:2; padding-top:0; margin-bottom:9px; white-space:normal}
+  .row .lead{grid-row:1}
+}
+
+.seam{border-top:1px solid var(--paper-edge); padding:18px 0; display:grid;
+  grid-template-columns:132px 1fr; gap:8px 22px; align-items:baseline}
+.seam:last-of-type{border-bottom:1px solid var(--paper-edge)}
+.seam dt{
+  font-family:var(--mono); font-size:0.68rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--ink-faint); margin:0;
+}
+.seam dd{margin:0; font-size:0.95rem; max-width:58ch; min-width:0; overflow-wrap:anywhere}
+.seam dd em{font-style:normal; font-family:var(--mono); font-size:0.88em; color:var(--ink-soft)}
+@media (max-width:600px){ .seam{grid-template-columns:1fr; gap:3px} }
+
+.honour{padding:17px 0; border-bottom:1px solid var(--paper-edge)}
+.honour .t{font-size:0.98rem; font-weight:600}
+.honour .m{font-family:var(--mono); font-size:0.72rem; color:var(--ink-faint); margin-top:3px; line-height:1.6}
+
+footer{
+  margin-top:62px; padding:26px 0 72px; border-top:1.5px solid var(--ink);
+  font-family:var(--mono); font-size:0.74rem; color:var(--ink-faint);
+  display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center;
+}
+footer .right{margin-left:auto}
+#theme{
+  background:none; border:1px solid var(--paper-edge); color:var(--ink-soft);
+  font-family:var(--mono); font-size:0.7rem; letter-spacing:0.07em;
+  text-transform:uppercase; padding:5px 10px; cursor:pointer;
+  transition:border-color 160ms var(--ease), color 160ms var(--ease);
+}
+#theme:hover{border-color:var(--rust); color:var(--rust)}
+
+.rise{opacity:0; transform:translateY(14px)}
+.rise.in{opacity:1; transform:none; transition:opacity 420ms var(--ease), transform 420ms var(--ease)}
+@media (prefers-reduced-motion: reduce){
+  .rise{opacity:1 !important; transform:none !important; transition:none !important}
+}
+@media (max-width:600px){
+  body{font-size:16px}
+  .masthead{padding-top:48px}
+  .plate{padding:22px 18px 20px}
+  section{padding-top:42px}
+  .stats{grid-template-columns:repeat(2, 1fr)}
+  .dumb .lbl{font-size:16px}
+  .dumb .val{font-size:17px}
+  .dumb .ax{font-size:14px}
+  .figskip{font-size:0.72rem}
+}
+@media (max-width:380px){
+  .stats{grid-template-columns:1fr}
+}
+@media print{
+  .rise{opacity:1 !important; transform:none !important}
+  #theme{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="masthead">
+  <h1 class="name">Gideon&nbsp;Gyimah</h1>
+  <p class="thesis">I work on whether our evaluation metrics
+  <em>measure what they claim to</em>, particularly for generative models
+  pointed at African languages.</p>
+  <p class="placed">AI Engineer &middot; Accra, Ghana</p>
+  <nav class="run">
+    <a href="mailto:gideongyimah19@gmail.com">gideongyimah19@gmail.com</a><span class="sep">/</span><a href="https://github.com/Gyimah3">github</a><span class="sep">/</span><a href="https://huggingface.co/Gyimah3">hugging face</a><span class="sep">/</span><a href="https://www.kaggle.com/gideongyimah">kaggle</a><span class="sep">/</span><a href="https://www.linkedin.com/in/gideon-gyimah-08268b243">linkedin</a><span class="sep">/</span><a href="cv.pdf">cv&nbsp;(pdf)</a>
+  </nav>
+</header>
+
+<section id="paper">
+  <div class="rule rise"><h2>Publication</h2><span class="count">01</span></div>
+
+  <div class="plate rise">
+    <span class="stamp">Accepted</span>
+    <h3>Guidance, Not Adaptation: What Makes an Open Text-to-Music Model Sing isiZulu</h3>
+    <p class="venue">1st Africa in AI Workshop, NeurIPS 2026<br>Springer LNCS &middot; accepted October 2026</p>
+
+    <p>Open text-to-music models advertise support for fifty or more languages.
+    To our knowledge, none had been evaluated on an African one. I adapted
+    ACE-Step 1.5, a 2B-parameter flow-matching diffusion transformer, to isiZulu
+    across ten genre families: Maskandi, Kwaito, Amapiano, Isicathamiya,
+    Mbaqanga and Gqom among them.</p>
+
+    <p>The first result is that classifier-free guidance, rather than the
+    language adaptation itself, controls whether the model sings the requested
+    isiZulu words. The second is less comfortable. The caption-retrieval control
+    I built to validate the genre metric turned out to be broken in three
+    independent ways. Each one pushed towards a false negative, and not one of
+    them raised an error. Corrected, the correct caption ranks 6.6 places above
+    a mismatched one.</p>
+
+    <figure>
+      <figcaption>Measured endpoints, shared scale</figcaption>
+      <svg class="dumb" viewBox="0 0 600 152" role="img"
+           aria-label="On a shared zero to one scale: composite lyric error falls from 0.957 at guidance 1 to 0.459 at guidance 15. Lyric coverage rises from 0.072 at guidance 1 to 0.680 at guidance 15.">
+        <line class="track" x1="150" y1="36" x2="560" y2="36"/>
+        <line class="span"  x1="338" y1="36" x2="542" y2="36"/>
+        <circle class="hi" cx="338" cy="36" r="5.5"/>
+        <circle class="lo" cx="542" cy="36" r="5.5"/>
+        <text class="lbl" x="0" y="32">composite</text>
+        <text class="lbl" x="0" y="45">lyric error</text>
+        <text class="val" x="338" y="20" text-anchor="middle">0.459</text>
+        <text class="val" x="542" y="20" text-anchor="middle">0.957</text>
+
+        <line class="track" x1="150" y1="98" x2="560" y2="98"/>
+        <line class="span"  x1="180" y1="98" x2="429" y2="98"/>
+        <circle class="lo" cx="180" cy="98" r="5.5"/>
+        <circle class="hi" cx="429" cy="98" r="5.5"/>
+        <text class="lbl" x="0" y="94">lyric</text>
+        <text class="lbl" x="0" y="107">coverage</text>
+        <text class="val" x="180" y="82" text-anchor="middle">0.072</text>
+        <text class="val" x="429" y="82" text-anchor="middle">0.680</text>
+
+        <line class="track" x1="150" y1="131" x2="560" y2="131"/>
+        <line class="track" x1="150" y1="127" x2="150" y2="135"/>
+        <line class="track" x1="355" y1="127" x2="355" y2="135"/>
+        <line class="track" x1="560" y1="127" x2="560" y2="135"/>
+        <text class="ax" x="150" y="148" text-anchor="middle">0</text>
+        <text class="ax" x="355" y="148" text-anchor="middle">0.5</text>
+        <text class="ax" x="560" y="148" text-anchor="middle">1.0</text>
+      </svg>
+      <p class="figskip">Filled circle is guidance 1, open circle guidance 15.
+      Only the endpoints are drawn, because only the endpoints are quoted here.
+      The sweep between them is in the paper.</p>
+    </figure>
+
+    <div class="stats">
+      <div class="stat"><b>3,214</b><span>generations</span></div>
+      <div class="stat"><b>60</b><span>prompts, seeds matched</span></div>
+      <div class="stat"><b>10.95&thinsp;h</b><span>isiZulu corpus</span></div>
+      <div class="stat"><b>d<sub>z</sub> &minus;2.57</b><span>guidance 1 vs 7</span></div>
+      <div class="stat"><b>p &lt; 10<sup>&minus;5</sup></b><span>sign-flip permutation</span></div>
+      <div class="stat"><b>p = 0.0008</b><span>corrected control, n=63</span></div>
+    </div>
+
+    <p class="links">
+      <a href="papers/guidance-not-adaptation-isizulu.pdf">Read the paper</a>
+      <a href="https://github.com/Gyimah3/ACE-Step-1.5-Zulu-Finetuned">Code</a>
+      <a href="https://huggingface.co/Gyimah3">Weights and logs</a>
+    </p>
+  </div>
+</section>
+
+<section id="research">
+  <div class="rule rise"><h2>Research and systems</h2><span class="count">05</span></div>
+  <div class="idx">
+
+    <article class="row rise">
+      <p class="lead">isiZulu generative audio model</p>
+      <p class="where">Wits MIND Institute<br>2025 &ndash; 2026</p>
+      <div class="body">
+        <p>Selected by competitive application to the Wits AI and African Music
+        Project, then paired with the artist Umlilo to build <em>Zazi</em>, a
+        voice and rhythm system rooted in Zulu musical identity. LoRA adaptation
+        on a corpus small enough that every augmentation choice mattered.
+        Supervised by Prof. Christo Doherty.</p>
+        <p>Weights and the full TensorBoard history are public, including the
+        runs that went nowhere.</p>
+        <p class="links"><a href="https://huggingface.co/Gyimah3">Model hub</a><a href="https://github.com/Gyimah3/ACE-Step-1.5-Zulu-Finetuned">Repository</a></p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">Disaster-resilience chatbot in four Ghanaian languages</p>
+      <p class="where">UNESCO Ghana<br>2025 &ndash; present</p>
+      <div class="body">
+        <p>A WhatsApp service in Twi, Ewe, Hausa and Ga, built for people on 2G
+        and not requiring literacy to operate. Among very few deployed NLP
+        systems working natively in Ga or Ewe.</p>
+        <p>Fluency was never the hard part. The hard part was whether a warning
+        stayed accurate and actionable after crossing into a language the model
+        had barely seen, which is the question that later became the paper above.</p>
+        <p class="links"><a href="https://wa.me/233204833556">Try it on WhatsApp</a></p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">Hausa automatic speech recognition</p>
+      <p class="where">ACE Regional Centre, UENR<br>2024</p>
+      <div class="body">
+        <p>Whisper fine-tuned on Hausa with speed perturbation and noise
+        injection, evaluated against held-out speakers and noise conditions.
+        Hausa has more than 70 million speakers and almost no labelled speech
+        data. Method and notebook published in full.</p>
+        <p class="links"><a href="https://www.kaggle.com/code/gideongyimah/finetuning-hausa">Kaggle notebook</a><a href="https://huggingface.co/Gyimah3">Models</a></p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">DocuMind, agentic retrieval for compliance documents</p>
+      <p class="where">Independent<br>2025</p>
+      <div class="body">
+        <p>Intent detection, query rephrasing, Redis KNN retrieval, cross-encoder
+        re-ranking, generation with source citations. PII is masked before any
+        chunk reaches the model, tenants are isolated by JWT scope, and images
+        pass through a vision model into searchable text.</p>
+        <p>It abstains. Answering "I don't know" rather than inventing something
+        is the behaviour the evaluation work exists to measure.</p>
+        <p class="links"><a href="https://github.com/Gyimah3/DOCUMIND-SS-AGENTIC-RAG">Repository</a></p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">SIGMA, a human-in-the-loop co-agent</p>
+      <p class="where">Independent<br>2025</p>
+      <div class="body">
+        <p>The model proposes structured diffs to a document and a person accepts
+        or rejects each one. Propose, apply, undo, redo, version history,
+        idempotency by proposal hashing, full audit trail. An autonomy toggle
+        lets the operator decide how much latitude the agent gets, which makes
+        it a small concrete study of where the human belongs in an agent loop.</p>
+        <p class="links"><a href="https://github.com/Gyimah3/Sigma-prototype-autonomous-agent">Repository</a></p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section id="work">
+  <div class="rule rise"><h2>Employment</h2><span class="count">03</span></div>
+  <div class="idx">
+
+    <article class="row rise">
+      <p class="lead">AI Engineer</p>
+      <p class="where">Inlaks Ltd, Accra<br>Jan 2025 &ndash; present</p>
+      <div class="body">
+        <p>Evaluation frameworks for hallucination, groundedness and failure
+        modes in LLM-powered banking agents carrying more than 10,000
+        interactions a day, plus multi-agent retrieval systems in LangGraph.
+        Behavioural churn scoring at 92% accuracy, and voice infrastructure
+        holding 1,000 concurrent sessions with live transcription and model
+        routing.</p>
+        <p>Most of what I know about how models fail under domain shift and
+        adversarial input came from watching them do it in production, where
+        nobody tolerates a confident wrong answer.</p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">Lead AI Researcher, multilingual NLP</p>
+      <p class="where">UNESCO Ghana<br>2025 &ndash; present</p>
+      <div class="body">
+        <p>Low-resource speech recognition, intent classification and speech
+        synthesis for Twi, Ewe, Hausa and Ga, with inference constrained to run
+        over 2G. Japan-funded disaster resilience programme.</p>
+      </div>
+    </article>
+
+    <article class="row rise">
+      <p class="lead">AI/ML Researcher and Teaching Assistant</p>
+      <p class="where">ACE Centre, UENR &middot; Azubi Africa<br>Aug 2023 &ndash; Oct 2024</p>
+      <div class="body">
+        <p>Low-resource speech recognition for Hausa, and k-means clustering on
+        energy consumption data for the centre's sustainability work. Mentored
+        more than fifty learners across three cohorts in Python, machine
+        learning and data analysis.</p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section id="recognition">
+  <div class="rule rise"><h2>Recognition</h2><span class="count">04</span></div>
+  <div class="idx rise">
+    <div class="honour">
+      <div class="t">Selected researcher, Wits AI and African Music Project</div>
+      <div class="m">Wits Innovation Centre and MIND Institute &middot; competitive selection &middot; 2025 to 2026</div>
+    </div>
+    <div class="honour">
+      <div class="t">1st runner-up, AI Ghana CO&#8322; prediction challenge</div>
+      <div class="m">Top 2 of more than 150 entrants &middot; Sentinel-5P satellite imagery &middot; 2024</div>
+    </div>
+    <div class="honour">
+      <div class="t">1st runner-up, ElevenLabs World Conversational Agent Hackathon</div>
+      <div class="m">Global, Exa Search category &middot; 2024</div>
+    </div>
+    <div class="honour">
+      <div class="t">1st runner-up, IndabaX Ghana retail analytics hackathon</div>
+      <div class="m">SQL agent over 100,000 records across African retail markets &middot; 2024</div>
+    </div>
+  </div>
+</section>
+
+<section id="detail">
+  <div class="rule rise"><h2>Detail</h2><span class="count">&nbsp;</span></div>
+  <dl class="rise">
+    <div class="seam">
+      <dt>Languages</dt>
+      <dd>Twi (first language) and English. Research or deployment experience in
+      Hausa, Ewe, Ga, isiZulu and Swahili.</dd>
+    </div>
+    <div class="seam">
+      <dt>Methods</dt>
+      <dd><em>LoRA and PEFT adaptation, retrieval-augmented generation,
+      hallucination and factuality evaluation, negative controls, multi-agent
+      orchestration, speech recognition and synthesis for low-resource
+      languages.</em></dd>
+    </div>
+    <div class="seam">
+      <dt>Tools</dt>
+      <dd><em>Python, PyTorch, HuggingFace Transformers, LangGraph, FastAPI,
+      Docker, PostgreSQL, Pinecone and Weaviate, AWS (certified).</em></dd>
+    </div>
+    <div class="seam">
+      <dt>Education</dt>
+      <dd>BSc Electrical and Electronic Engineering, University of Energy and
+      Natural Resources, Sunyani, Ghana, 2019 to 2023. Thesis on electrical load
+      forecasting for the Valco aluminium smelter. English is the sole medium of
+      instruction and examination at UENR.</dd>
+    </div>
+    <div class="seam">
+      <dt>Looking for</dt>
+      <dd>A funded master's or PhD place from 2027, on evaluation validity for
+      generative models in low-resource settings. Write to me directly.</dd>
+    </div>
+  </dl>
+</section>
+
+<footer>
+  <span>Accra, Ghana</span>
+  <span><a href="mailto:gideongyimah19@gmail.com">gideongyimah19@gmail.com</a></span>
+  <span class="right"><button id="theme" type="button" aria-label="Switch colour theme">Theme</button></span>
+</footer>
+
+</div>
+<script>
+(function(){
+  var k="gg-theme";
+  try{ var s=localStorage.getItem(k); if(s){ document.documentElement.setAttribute("data-theme",s); } }catch(e){}
+  var b=document.getElementById("theme");
+  if(b){ b.addEventListener("click", function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    if(!cur){
+      var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      cur = dark ? "dark" : "light";
+    }
+    var next = (cur==="dark") ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try{ localStorage.setItem(k, next); }catch(e){}
+  }); }
+
+  var items=[].slice.call(document.querySelectorAll(".rise"));
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce || !("IntersectionObserver" in window)){
+    items.forEach(function(el){ el.classList.add("in"); });
+    return;
+  }
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting){ return; }
+      var el=en.target;
+      var d=parseInt(el.getAttribute("data-d")||"0",10);
+      setTimeout(function(){ el.classList.add("in"); }, d);
+      io.unobserve(el);
+    });
+  },{rootMargin:"0px 0px -8% 0px", threshold:0.08});
+  items.forEach(function(el,i){ el.setAttribute("data-d", String((i%4)*60)); io.observe(el); });
+})();
+</script>
+</body>
+</html>
